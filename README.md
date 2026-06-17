@@ -2,8 +2,9 @@
 
 Rust infrastructure engineer. Merged work across the Rust Ethereum stack —
 **alloy**, **CometBFT**, and **Foundry** — with active PRs in **Reth**,
-**Lighthouse**, and **Agave**. I also build and operate
-[**Sentrix Chain**](https://github.com/sentrix-labs/sentrix), a Rust EVM Layer-1.
+**Lighthouse**, and **Agave**. I also build and run
+[**Sentrix Chain**](https://github.com/sentrix-labs/sentrix), a Rust EVM Layer-1 with a
+live public testnet.
 
 [satyakwok.dev](https://satyakwok.dev) · [GitHub](https://github.com/satyakwok) · [X @blackskyiee](https://x.com/blackskyiee) · satyakwok88@gmail.com
 
