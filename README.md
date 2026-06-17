@@ -15,27 +15,41 @@ first; in-review PRs and Sentrix Chain ecosystem listings are kept separate.
 ### Execution & ABI tooling — alloy / Foundry
 
 - [alloy-rs/core#1122](https://github.com/alloy-rs/core/pull/1122) — validate the event
-  topic count before decoding the log body in dyn-ABI, preventing a malformed log from
-  being decoded against the wrong topic layout.
+  topic count before decoding the dyn-ABI log body. ERC-20 and ERC-721 `Transfer` share
+  the same `topic0`, so a topic-only filter matches both; decoding an ERC-721 log against
+  the ERC-20 ABI overran the body and surfaced a confusing `Overrun` instead of a clear
+  `TopicLengthMismatch`.
 - [alloy-rs/core#1124](https://github.com/alloy-rs/core/pull/1124) — propagate
-  `extra_derives` to the generated function-call enums in the `sol!` macro, so custom
-  derives apply to the call type like they already do to other generated types.
+  `extra_derives` to the generated `sol!` function-calls enum, the one generated enum
+  that silently dropped user derives like `Debug`/`PartialEq`. Root-caused to the
+  expansion-context attributes being reset before the calls enum was expanded; one-line
+  fix plus a regression test that fails to compile on `main`.
 - [alloy-rs/alloy#3976](https://github.com/alloy-rs/alloy/pull/3976) — saturate
-  out-of-`u64` `baseFeePerGas` on Ethereum header deserialization instead of failing,
-  matching how other oversized numeric fields are handled.
+  out-of-`u64` `baseFeePerGas` on header deserialization instead of failing outright.
+  Some EVM chains return values above `u64::MAX` (chain id 988 returns `10^21` for a
+  range of blocks), which broke RPC deserialization entirely; fix follows the
+  maintainer-preferred saturate-on-deser direction.
 - [foundry-rs/foundry-core#91](https://github.com/foundry-rs/foundry-core/pull/91) —
-  preserve base paths in generated block-explorer URLs so sub-path explorer hosts get
-  correct links.
+  preserve base paths in generated block-explorer URLs. `Url::join` dropped the sub-path
+  (e.g. `/explorer`) for explorers not hosted at a bare domain, producing wrong links;
+  fixed by normalizing the base to a trailing slash.
 
 ### Consensus / BFT — CometBFT
 
-- [cometbft/cometbft#5890](https://github.com/cometbft/cometbft/pull/5890) — proposer
-  self-verifies its own vote extension before broadcasting, catching a malformed
-  extension locally instead of after it reaches peers.
-- [cometbft/cometbft#5861](https://github.com/cometbft/cometbft/pull/5861) — reject
-  out-of-int-range float IDs in `idFromInterface` rather than silently truncating them.
 - [cometbft/cometbft#5857](https://github.com/cometbft/cometbft/pull/5857) — add
-  `LoadValidatorsFast` to skip the proposer-priority advance on the replay path.
+  `LoadValidatorsFast` to skip the proposer-priority advance on the replay path —
+  **up to 903x faster validator-set loads far from a checkpoint** (126 ms to 140 µs on a
+  100-validator set; the issue reported ~10x in production).
+- [cometbft/cometbft#5890](https://github.com/cometbft/cometbft/pull/5890) — proposer
+  self-verifies its own vote extension before broadcasting. Without it, an app whose
+  `ExtendVote` emits data its own `VerifyVoteExtension` rejects **deadlocks the chain**:
+  the issuing validator advances locally while peers loop rejecting the extension and 2/3
+  precommits are never reached. The guard fails fast locally with a clear message.
+- [cometbft/cometbft#5861](https://github.com/cometbft/cometbft/pull/5861) — reject
+  out-of-int-range float RPC IDs in `idFromInterface`. Large numeric JSON IDs above
+  `MaxInt` all saturated to `MinInt`, **silently colliding and breaking request/response
+  correlation**; the fix uses a float round-trip that also catches the `2^63` rounding
+  boundary a naive bound check misses.
 
 ## In review
 
