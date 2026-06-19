@@ -52,6 +52,15 @@ first; in-review PRs and Sentrix Chain ecosystem listings are kept separate.
   correlation**; the fix uses a float round-trip that also catches the `2^63` rounding
   boundary a naive bound check misses.
 
+### TUI — Ratatui
+
+- [ratatui/ratatui#2594](https://github.com/ratatui/ratatui/pull/2594) — keep a large
+  scrollbar thumb inside the track at the end position. When the content is shorter than
+  the viewport the thumb is large relative to the track; `thumb_start` and `thumb_length`
+  were clamped independently, so at the end `thumb_start + thumb_length` could exceed the
+  track and the trailing end symbol was dropped. Fixed by clamping the thumb to the track
+  length.
+
 ## In review
 
 Active upstream PRs in the repositories I want to work in:
